@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  pychloe:
+    image: pychloe:latest
+    container_name: pychloe
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - CONF=${CONF}
+        - LOG=${LOG}
+    volumes:
+      - ${CONF}:/chloe/conf
+      - ${LOG}:/chloe/log
