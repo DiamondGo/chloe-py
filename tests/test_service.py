@@ -2,7 +2,7 @@ import unittest
 
 import telebot
 
-from common import getConfig
+from common import getConfig, getAcl
 from im.tgchat import TgBot
     
 
@@ -10,8 +10,9 @@ class TestBot(unittest.TestCase):
     
     def setUp(self):
         self.config = getConfig()
+        self.acl = getAcl()
 
-    def test_echo(self):
+    def test_config(self):
         # bot = telebot.TeleBot(self.config.telegram.botToken)
 
         # @bot.message_handler(func=lambda message: True)
@@ -26,12 +27,8 @@ class TestBot(unittest.TestCase):
         # for update in updates:
         #     if update.message != None:
         #         print(update.message.text)
+        pass
 
-        bot = TgBot(self.config.telegram.botToken)
-        for msg in bot.getMessages():
-            chat = msg.getChat()
-            print(chat.getSelf().getUserName())
-            chat.replyMessage("hell, " + msg.getText(), msg.getID())
 
             
 

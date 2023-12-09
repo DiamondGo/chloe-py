@@ -6,6 +6,22 @@ UserID = str
 MessageID = str
 CleanFunc = Callable[[], None]
 
+class User(ABC):
+
+    @abstractmethod
+    def getID(self) -> UserID:
+        raise NotImplementedError("not implemented")
+
+    @abstractmethod
+    def getFirstName(self) -> str:
+        raise NotImplementedError("not implemented")
+
+    @abstractmethod
+    def getUserName(self) -> str:
+        raise NotImplementedError("not implemented")
+
+
+
 class Chat(ABC):
 
     @abstractmethod
@@ -37,23 +53,9 @@ class Chat(ABC):
         raise NotImplementedError("not implemented")
     
     @abstractmethod
-    def getSelf(self) -> UserID:
+    def getSelf(self) -> User:
         raise NotImplementedError("not implemented")
     
-
-class User(ABC):
-
-    @abstractmethod
-    def getID(self) -> UserID:
-        raise NotImplementedError("not implemented")
-
-    @abstractmethod
-    def getFirstName(self) -> str:
-        raise NotImplementedError("not implemented")
-
-    @abstractmethod
-    def getUserName(self) -> str:
-        raise NotImplementedError("not implemented")
 
 class Message(ABC):
     
@@ -62,11 +64,11 @@ class Message(ABC):
         raise NotImplementedError("not implemented")
         
     @abstractmethod
-    def getUser(self) -> UserID:
+    def getUser(self) -> User:
         raise NotImplementedError("not implemented")
     
     @abstractmethod
-    def getChat(self) -> ChatID:
+    def getChat(self) -> Chat:
         raise NotImplementedError("not implemented")
     
     @abstractmethod
@@ -83,7 +85,7 @@ class MessageBot(ABC):
     @abstractmethod
     def getMessages(self) -> Iterable[Message]:
         raise NotImplementedError("not implemented")
-     
+
 
 ### AI interfaces
 
@@ -93,11 +95,7 @@ ConversationID = int # int64 actually
 class Conversation(ABC):
     
     @abstractmethod
-    def getID(self) -> ConversationID:
-        raise NotImplementedError("not implemented")
-
-    @abstractmethod
-    def ask(self) -> str:
+    def ask(self, q: str) -> str:
         raise NotImplementedError("not implemented")
 
 
