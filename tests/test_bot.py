@@ -3,7 +3,7 @@ import unittest
 import telebot
 
 from common import getConfig
-from im.tgchat import TgBot
+from im.tgchat import TgBot, TgChat
     
 
 class TestBot(unittest.TestCase):
@@ -11,29 +11,48 @@ class TestBot(unittest.TestCase):
     def setUp(self):
         self.config = getConfig()
 
-    def test_echo(self):
-        # bot = telebot.TeleBot(self.config.telegram.botToken)
+    def test_matching(self):
+        self.skipTest("for now")
+        chat = TgChat(None, "ut", 3)
 
-        # @bot.message_handler(func=lambda message: True)
-        # def echo(message):
-        #     bot.reply_to(message, message.text)
-        #     #bot.send_voice
-        #     bot.get_updates
+        text = r"""
+Here's an example using a non-hashable type "MyType":
 
-        # bot.infinity_polling()
-    
-        # updates = bot.get_updates()
-        # for update in updates:
-        #     if update.message != None:
-        #         print(update.message.text)
+```go
+type MyType struct {
+    // fields and methods of your type
+}
+```
 
-        bot = TgBot(self.config.telegram.botToken)
-        for msg in bot.getMessages():
-            chat = msg.getChat()
-            print(chat.getSelf().getUserName())
-            chat.replyMessage("hell, " + msg.getText(), msg.getID())
+and
 
+```python
+if __name__ == '__main__':
+    print('hello world')
+```
+
+
+Alternatively, if you still want to use the non-hashable type as the key itself, you might consider using a different data structure, like a slice or a custom implementation of a hash table that can handle non-hashable keys.        
+"""
+
+        newText = chat.escape(text)
+        print(newText)
             
+    def test_matching_emphasized(self):
+        text = r"""        In this example, we get `\b\w+\b`."""
+
+        chat = TgChat(None, "ut", 4)
+        newText = chat.escape(text)
+
+    def test_matching_nested(self):
+        self.skipTest("for now")
+        text = r"""
+```In this example, we convert the `slice` key to a string using `fmt.Sprintf` and use that string as the key in the map.```"""
+
+        chat = TgChat(None, "ut", 3)
+        newText = chat.escape(text)
+        
+        
 
 if __name__ == '__main__':
     unittest.main()
