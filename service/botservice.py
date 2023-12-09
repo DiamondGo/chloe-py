@@ -146,6 +146,7 @@ class SmartBot(BotService):
             
             talk = self.talkFactory.getTalk(cid)
             answer = talk.ask(text)
+            log.debug("received answer for chat %s: %s", cid, answer)
 
             if voice is not None:
                 chat.quoteMessage(answer, mid, "Transcription:\n" + text)
@@ -158,6 +159,7 @@ class SmartBot(BotService):
                     log.error("failed converting to speech: %s", text)
             else:
                 chat.replyMessage(answer, mid)
+                log.info("voice replied to %s", user.getUserName())
                 
 
     def run(self) -> None:

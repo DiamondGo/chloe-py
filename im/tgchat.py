@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from definition import MessageBot, Message, MessageID, User, UserID, Chat, ChatID, CleanFunc
 from im.common import ChatCache
-from common import rmHandle
+from common import rmHandle, getLogger
 
-import os, tempfile
+import os, tempfile, re
 from queue import Queue
 from threading import Thread
 from telebot import TeleBot, types
-from typing import Iterable, Tuple
+from typing import Iterable, Tuple, List
 
-
+log = getLogger(__file__)
 
 _idPrefix = 'tg-'
 
@@ -149,6 +149,19 @@ class TgChat(Chat):
         self.id: ChatID = id
         self.bot: TgBot = bot
         self.memberCount: int = memberCnt
+        self.notouchPattens = self.createPatterns()
+        
+    def createPatterns(self) -> List[re.Pattern]:
+        pattens: List[re.Pattern] = []
+
+        codePat = re.compile(r'```.+?```', re.MULTILINE | re.DOTALL)
+        pattens.append(codePat)
+
+        emphasized = re.compile(r'`[\\.+\w]+`')
+        pattens.append(emphasized)
+        
+        return pattens
+
 
     def getID(self) -> ChatID:
         return self.id
@@ -160,10 +173,13 @@ class TgChat(Chat):
         raise NotImplementedError("not implemented")
 
     def replyMessage(self, message: str, replyTo: MessageID) -> None:
-        message = self.escape(message)
+        escapedMsg = self.escape(message)
+        if escapedMsg != message:
+            log.debug("escaped message: %s", escapedMsg)
+            
         self.bot.api.send_message(
             chat_id=self.bot.stripPrefixToInt(self.id),
-            text=message,
+            text=escapedMsg,
             parse_mode="MarkdownV2",
             reply_to_message_id=self.bot.stripPrefixToInt(replyTo)
         )
@@ -198,9 +214,45 @@ class TgChat(Chat):
         sid = UserID(_idPrefix +str(self.bot.api.user.id))
         return self.bot.lookupUser(sid, self.id)
     
-    def escape(self, msg: str) -> str:
+    def escapePuncs(self, msg: str) -> str:
         escape_chars = r'_*[]()~`>#+-=|{}.!'
         return "".join('\\' + ch if ch in escape_chars else ch for ch in msg)
+    
+    def escapeBackslash(self, msg: str) -> str:
+        return msg.replace('\\', '\\\\')
+    
+    def escape(self, msg: str) -> str:
+        matchPos = []
+        for p in self.notouchPattens:
+            for m in re.finditer(p, msg):
+                if m.end() > m.start():
+                    matchPos.append((m.start(), m.end()))
+
+        orderedPos = sorted(matchPos, key=lambda p: (p[0], -p[1]))
+
+        idx = 0
+        while idx < len(orderedPos) - 1:
+            p1 = orderedPos[idx]
+            p2 = orderedPos[idx +1]
+            if p2[0] >= p1[1]:
+                idx += 1
+                continue
+
+            end = max(p1[1], p2[1])
+            p = (p1[0], end)
+            orderedPos = orderedPos[:idx] + [p] + orderedPos[idx+2:]
+        
+        escaped = []
+        idx = 0
+        for start, end in orderedPos:
+            if start > idx:
+                escaped.append(self.escapePuncs(msg[idx:start]))
+            escaped.append(self.escapeBackslash(msg[start:end]))
+            idx = end
+        if idx < len(msg):
+            escaped.append(self.escapePuncs(msg[idx:]))
+
+        return ''.join(escaped)
 
 class TgUser(User):
 
