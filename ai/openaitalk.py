@@ -4,7 +4,7 @@ from datetime import time, datetime, timedelta
 from typing import List, Dict
 
 from definition import ConversationID, Conversation, ConversationFactory, ChatID
-from common import Config, OpenAIConfig
+from common import Config, OpenAIConfig, getLogger
 from ai.common import getOpenAIClient
 
 
@@ -16,6 +16,8 @@ from tiktoken import Encoding, encoding_for_model
 #maxMessageQueueToken = 3600
 maxMessageQueueToken = 1000
 CompletionTimeout    = timedelta(seconds=1)
+
+log = getLogger(__file__)
 
 @dataclass
 class QA:
@@ -40,6 +42,7 @@ class OpenAITalk(Conversation):
         self.model = cfg.model
         self.encoding: Encoding = encoding_for_model(self.model)
         self.client = getOpenAIClient(cfg.apiKey)
+        self.requestTimeout = 30
 
         
     
@@ -111,19 +114,20 @@ class OpenAITalk(Conversation):
                 resp: ChatCompletion = self.client.chat.completions.create(
                     model=self.model,
                     messages=messages,
-                    timeout=int(self.ctxTimeout.total_seconds())
+                    timeout=self.requestTimeout
                 )
                 answer = resp.choices[0].message.content
                 if answer is not None and len(answer) > 0:
                     self.messageQueue[-1].a = answer
                     return answer
             except (APITimeoutError, APIConnectionError) as e:
-                print(e)
+                log.warn("request wass likely timed out, %s", str(e))
                 retry -= 1
             except Exception as e:
-                print(e)
+                log.warn("request failed, %s", str(e))
                 retry -= 1
                 
+        log.error("request failed, retry run out")
         return "I apologize, but the OpenAI API is currently experiencing high traffic. Kindly try again at a later time."
 
 
