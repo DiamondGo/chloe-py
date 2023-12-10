@@ -10,13 +10,22 @@ log = getLogger(__file__)
 class Wisper(SpeechToText):
     def __init__(self, apiKey: str) -> None:
         self.client = getOpenAIClient(apiKey)
+        self.requestTimeout = 30
 
     def convert(self, audFile: str) -> str:
-        with open(audFile, "rb") as bin:
-            transcript = self.client.audio.transcriptions.create(
-                model="whisper-1",
-                file=bin
-            )
+        retry = 3
+        while retry > 0:
+            try:
+                with open(audFile, "rb") as bin:
+                    transcript = self.client.audio.transcriptions.create(
+                        model="whisper-1",
+                        file=bin,
+                        timeout=self.requestTimeout
+                    )
+                    break
+            except Exception as e:
+                retry -= 1
+                log.warn("speech2text request failed, %s", str(e))
 
         return transcript.text
         
@@ -36,6 +45,7 @@ class ReadText(TextToSpeech):
                     response_format="aac",
                     timeout=self.requestTimeout
                 )
+                break
             except Exception as e:
                 log.warn("text2speech request failed, %s", str(e))
                 retry -= 1
