@@ -157,7 +157,7 @@ class TgChat(Chat):
         codePat = re.compile(r'```.+?```', re.MULTILINE | re.DOTALL)
         pattens.append(codePat)
 
-        emphasized = re.compile(r'`[\\.+\w]+`')
+        emphasized = re.compile(r'`[\\.+*\(\)\-\[\]=\s\w]+`')
         pattens.append(emphasized)
         
         return pattens

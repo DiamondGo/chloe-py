@@ -39,10 +39,12 @@ Alternatively, if you still want to use the non-hashable type as the key itself,
         print(newText)
             
     def test_matching_emphasized(self):
-        text = r"""        In this example, we get `\b\w+\b`."""
+        #text = r"""        In this example, we get `\b\w+\b`."""
+        text = r"You can call `==` on the Future object"
 
         chat = TgChat(None, "ut", 4)
         newText = chat.escape(text)
+        print(newText)
 
     def test_matching_nested(self):
         self.skipTest("for now")

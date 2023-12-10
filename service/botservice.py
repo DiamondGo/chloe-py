@@ -159,13 +159,13 @@ class SmartBot(BotService):
                     log.error("failed converting to speech: %s", text)
             else:
                 chat.replyMessage(answer, mid)
-                log.info("voice replied to %s", user.getUserName())
+                log.info("replied to %s", user.getUserName())
                 
 
     def run(self) -> None:
         for m in self.listenToAll():
             #self.handleMessage(m)
-            self.pool.submit(self.handleMessage, m)
+            future = self.pool.submit(self.handleMessage, m)
             
 
 
