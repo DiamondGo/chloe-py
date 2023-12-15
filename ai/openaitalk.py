@@ -180,17 +180,23 @@ class OpenAITalk(Talk):
                     )
                 
         
-        model = self.visionModel if hasImage else self.model
-        
         retry = 3
         while retry > 0:
             try:
-                resp: ChatCompletion = self.client.chat.completions.create(
-                    model=model,
-                    messages=messages,
-                    timeout=self.requestTimeout,
-                    max_tokens=maxMessageQueueToken
-                )
+                if hasImage:
+                    resp: ChatCompletion = self.client.chat.completions.create(
+                        model=self.visionModel,
+                        messages=messages,
+                        timeout=self.requestTimeout,
+                        max_tokens=maxMessageQueueToken
+                    )
+                else:
+                    resp: ChatCompletion = self.client.chat.completions.create(
+                        model=self.model,
+                        messages=messages,
+                        timeout=self.requestTimeout
+                    )
+                
                 answer = resp.choices[0].message.content
                 if answer is not None and len(answer) > 0:
                     self.messageQueue[-1].a = answer
