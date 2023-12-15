@@ -177,12 +177,21 @@ class TgChat(Chat):
         if escapedMsg != message:
             log.debug("escaped message: %s", escapedMsg)
             
-        self.bot.api.send_message(
-            chat_id=self.bot.stripPrefixToInt(self.id),
-            text=escapedMsg,
-            parse_mode="MarkdownV2",
-            reply_to_message_id=self.bot.stripPrefixToInt(replyTo)
-        )
+        try:
+            self.bot.api.send_message(
+                chat_id=self.bot.stripPrefixToInt(self.id),
+                text=escapedMsg,
+                parse_mode="MarkdownV2",
+                reply_to_message_id=self.bot.stripPrefixToInt(replyTo)
+            )
+        except Exception as e:
+            log.error("failed to send message as markdown, %s", str(e))
+            self.bot.api.send_message(
+                chat_id=self.bot.stripPrefixToInt(self.id),
+                text=escapedMsg,
+                parse_mode="",
+                reply_to_message_id=self.bot.stripPrefixToInt(replyTo)
+            )
 
 
 
@@ -192,12 +201,21 @@ class TgChat(Chat):
         md += "  \n"
         md += self.escape(message)
 
-        self.bot.api.send_message(
-            chat_id=self.bot.stripPrefixToInt(self.id),
-            text=md,
-            parse_mode="MarkdownV2",
-            reply_to_message_id=self.bot.stripPrefixToInt(replyTo)
-        )
+        try:
+            self.bot.api.send_message(
+                chat_id=self.bot.stripPrefixToInt(self.id),
+                text=md,
+                parse_mode="MarkdownV2",
+                reply_to_message_id=self.bot.stripPrefixToInt(replyTo)
+            )
+        except Exception as e:
+            log.error("failed to send quote message as markdown, %s", str(e))
+            self.bot.api.send_message(
+                chat_id=self.bot.stripPrefixToInt(self.id),
+                text=md,
+                parse_mode="",
+                reply_to_message_id=self.bot.stripPrefixToInt(replyTo)
+            )
 
 
     def replyImage(self, imgPath: str, message: MessageID) -> None:
