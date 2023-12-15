@@ -9,7 +9,10 @@ from typing import Callable
 class OpenAIConfig:
     apiKey: str
     model: str
-    contextTimeout: int
+    contextTimeout: int = 120
+    visionModel: str = "gpt-4-vision-preview"
+    visionMaxToken: int = 300
+    visionContextTimeout: int = 60
 
 @dataclass
 class TelegramConfig:
