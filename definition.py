@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Tuple, Iterable
+from typing import Callable, List, Tuple, Iterable
 
 ChatID = str
 UserID = str
@@ -78,6 +78,11 @@ class Message(ABC):
     @abstractmethod
     def getVoice(self) -> Tuple[str, CleanFunc]:
         raise NotImplementedError("not implemented")
+    
+    @abstractmethod
+    def getImages(self) -> List[Tuple[str, CleanFunc]]:
+        raise NotImplementedError("not implemented")
+        
         
 
 class MessageBot(ABC):
@@ -91,6 +96,12 @@ class MessageBot(ABC):
 
 ConversationID = int # int64 actually
 
+class ImageRecognizer(ABC):
+    
+    @abstractmethod
+    def prepareImages(images: List[str]=None) -> str:
+        raise NotImplementedError("not implemented")
+
 
 class Conversation(ABC):
     
@@ -99,10 +110,14 @@ class Conversation(ABC):
         raise NotImplementedError("not implemented")
 
 
-class ConversationFactory(ABC):
+class Talk(Conversation, ImageRecognizer):
+    pass
+
+
+class TalkFactory(ABC):
 
     @abstractmethod
-    def getTalk(self, cid: ChatID) -> Conversation:
+    def getTalk(self, cid: ChatID) -> Talk:
         raise NotImplementedError("not implemented")
 
 
@@ -125,6 +140,7 @@ class ImageGenerator(ABC):
     @abstractmethod
     def generate(self, desc: str, size: str) -> Tuple[str, CleanFunc]:
         raise NotImplementedError("not implemented")
+
 
 
 ### for service

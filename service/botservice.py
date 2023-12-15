@@ -99,8 +99,15 @@ class SmartBot(BotService):
 
             chat = m.getChat()
             cid = chat.getID()
+
             voice, cleanFunc = m.getVoice()
             defer(cleanFunc)
+            
+            photos = []
+            for photo, cleanImageFunc in m.getImages():
+                photos.append(photo) # for telegram there will be only one image one message, but we use list anyway
+                defer(cleanImageFunc)
+
             msgText = m.getText()
             mid = m.getID()
 
@@ -127,11 +134,14 @@ class SmartBot(BotService):
             else:
                 text = msgText
             
+            # handle drawing request
             desc, size = self.isDrawRequest(text)
             if desc is not None and size is not None:
                 # TODO
                 pass
                 return
+            
+                
 
             if memberCnt > 2 and not self.isMentioned(text, botUsername):
                 return
@@ -145,6 +155,16 @@ class SmartBot(BotService):
             log.info("received question from %s, id %s: %s", user.getUserName(), uid, text)
             
             talk = self.talkFactory.getTalk(cid)
+
+            # handle vision request
+            if len(photos) > 0:
+                log.debug("prepare %d images", len(photos))
+                talk.prepareImages(photos)
+            
+            if text is None or len(text) == 0:
+                log.debug("no text, skip ask")
+                return
+
             answer = talk.ask(text)
             log.debug("received answer for chat %s: %s", cid, answer)
 
