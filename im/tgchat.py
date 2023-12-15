@@ -194,7 +194,7 @@ class TgChat(Chat):
             log.error("failed to send message as markdown, %s", str(e))
             self.bot.api.send_message(
                 chat_id=self.bot.stripPrefixToInt(self.id),
-                text=escapedMsg,
+                text=message,
                 parse_mode="",
                 reply_to_message_id=self.bot.stripPrefixToInt(replyTo)
             )
@@ -202,12 +202,12 @@ class TgChat(Chat):
 
 
     def quoteMessage(self, message: str, replyTo: MessageID, quote: str) -> None:
-        md = "_*" + self.escape(quote) + "*_"
-        md += "  \n"
-        md += "  \n"
-        md += self.escape(message)
-
         try:
+            md = "_*" + self.escape(quote) + "*_"
+            md += "  \n"
+            md += "  \n"
+            md += self.escape(message)
+
             self.bot.api.send_message(
                 chat_id=self.bot.stripPrefixToInt(self.id),
                 text=md,
@@ -216,9 +216,15 @@ class TgChat(Chat):
             )
         except Exception as e:
             log.error("failed to send quote message as markdown, %s", str(e))
+
+            plain = quote
+            plain += "  \n"
+            plain += "  \n"
+            plain += message
+
             self.bot.api.send_message(
                 chat_id=self.bot.stripPrefixToInt(self.id),
-                text=md,
+                text=plain,
                 parse_mode="",
                 reply_to_message_id=self.bot.stripPrefixToInt(replyTo)
             )
