@@ -1,9 +1,10 @@
 from __future__ import annotations
+import base64
 from dataclasses import dataclass, field
 from datetime import time, datetime, timedelta
 from typing import List, Dict
 
-from definition import ConversationID, Conversation, ConversationFactory, ChatID
+from definition import ConversationID, Conversation, TalkFactory, ChatID, ImageRecognizer, Talk
 from common import Config, OpenAIConfig, getLogger
 from ai.common import getOpenAIClient
 
@@ -13,8 +14,8 @@ from openai.types.chat import ChatCompletion, ChatCompletionMessage, ChatComplet
 from tiktoken import Encoding, encoding_for_model
 
 # const
-#maxMessageQueueToken = 3600
-maxMessageQueueToken = 1000
+maxMessageQueueToken = 4096
+#maxMessageQueueToken = 1000
 CompletionTimeout    = timedelta(seconds=1)
 
 log = getLogger(__file__)
@@ -24,17 +25,18 @@ class QA:
     q: str = field(default=None) # question
     a: str = field(default=None) # answer
     s: str = field(default=None) # system role
+    p: str = field(default=None) # picture
 
 
 
 
     
 
-class OpenAITalk(Conversation):
+class OpenAITalk(Talk):
     def __init__(self, botName: str, cfg: OpenAIConfig) -> None:
         self.botName: str = botName
         self.ctxTimeout: timedelta = timedelta(seconds=cfg.contextTimeout)
-        self.lastMessage: time = None
+        self.lastMessage: datetime = None
         self.greeting = QA(
             s =  "You are a helpful assistant. Your name is %s." % self.botName
         )
@@ -43,35 +45,68 @@ class OpenAITalk(Conversation):
         self.encoding: Encoding = encoding_for_model(self.model)
         self.client = getOpenAIClient(cfg.apiKey)
         self.requestTimeout = 30
-
         
+        # vision process
+        self.visionModel: str = cfg.visionModel
+        self.visionMaxToken: int = cfg.visionMaxToken
+        self.visionTimeout: timedelta = timedelta(seconds=cfg.visionContextTimeout)
+    
+    def getImageTokenCount(self, image: str) -> int:
+        return 1024 if image is not None else 0 # I know it's not accurate
+        
+    def prepareNewImageMessage(self, image: str) -> None:
+        totalToken = self.getTOkenCount(self.greeting.s)
+        qa = QA()
+        if image is not None:
+            totalToken += self.getImageTokenCount(image)
+            with open(image, 'rb') as img:
+                qa.p = base64.b64encode(img.read()).decode('utf-8')
+        
+        now = datetime.now()
+        isOld: bool = self.lastMessage is not None and now > (self.lastMessage + self.visionTimeout)
+        
+        newQ: List[QA] = [qa,]
+
+        self.messageQueue = self.appendHistoryMessage(newQ, totalToken, isOld)
+        self.lastMessage = now
     
     def prepareNewMessage(self, msg: str) -> None:
         totalToken = self.getTOkenCount(msg) + self.getTOkenCount(self.greeting.s)
-        now: time = datetime.now().time()
+        now = datetime.now()
         isOld: bool = self.lastMessage is not None and now > (self.lastMessage + self.ctxTimeout)
+
+        for qa in self.messageQueue:
+            if qa.p is not None:
+                # shorter context timeout for vision request
+                isOld = self.lastMessage is not None and now > (self.lastMessage + self.visionTimeout)
+                break
 
         newQ: List[QA] = [QA(q=msg),]
 
+        self.messageQueue = self.appendHistoryMessage(newQ, totalToken, isOld)
+    
+    def appendHistoryMessage(self, ql: List[QA], totalToken: int, tooOld: bool) -> List[QA]:
         # add conversation history
-        for i in range(len(self.messageQueue) -1, 0, -1):
-            if totalToken >= maxMessageQueueToken or isOld:
+        for i in range(len(self.messageQueue) -1, 0, -1): # skip 0 because it's always greeting
+            qa = self.messageQueue[i]
+            if totalToken >= maxMessageQueueToken or tooOld:
                 break
-            cnt = self.getTOkenCount(self.messageQueue[i].q) + self.getTOkenCount(self.messageQueue[i].a)
+            cnt = self.getTOkenCount(qa.q) + self.getTOkenCount(qa.a) + self.getImageTokenCount(qa.p)
             if totalToken + cnt > maxMessageQueueToken:
                 break
             
-            newQ.append(self.messageQueue[i])
+            ql.append(qa)
             totalToken += cnt
         
-        newQ.append(self.greeting)
+        ql.append(self.greeting)
 
         # reverse new queue
-        for i in range(int(len(newQ)/2)):
-            j = len(newQ) -1 -i
-            newQ[i], newQ[j] = newQ[j], newQ[i] # swap
+        for i in range(int(len(ql)/2)):
+            j = len(ql) -1 -i
+            ql[i], ql[j] = ql[j], ql[i] # swap
         
-        self.messageQueue = newQ
+        return ql
+        
 
     
     def getTOkenCount(self, msg: str) -> int:
@@ -84,7 +119,8 @@ class OpenAITalk(Conversation):
         self.prepareNewMessage(q)
 
         messages = []
-
+        
+        hasImage = False
         for msg in self.messageQueue:
             if msg.s is not None and msg.s != "":
                 messages.append(
@@ -93,7 +129,7 @@ class OpenAITalk(Conversation):
                         "content": msg.s
                     }
                 )
-            if msg.q is not None and msg.q != "":
+            if msg.q is not None and msg.q != "" and msg.p is None:
                 messages.append(
                     {
                         "role": "user",
@@ -107,18 +143,64 @@ class OpenAITalk(Conversation):
                         "content": msg.a
                     }
                 )
+            if msg.p is not None and msg.p != "":
+                hasImage = True
+                if msg.q is not None and msg.q != "":
+                    messages.append(
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": msg.q,
+                                },
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/jpeg;base64,{msg.p}"
+                                    }
+                                }
+                            ]
+                        }
+                    )
+                else:
+                    # no text
+                    messages.append(
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/jpeg;base64,{msg.p}"
+                                    }
+                                }
+                            ]
+                        }
+                    )
+                
         
         retry = 3
         while retry > 0:
             try:
-                resp: ChatCompletion = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=messages,
-                    timeout=self.requestTimeout
-                )
+                if hasImage:
+                    resp: ChatCompletion = self.client.chat.completions.create(
+                        model=self.visionModel,
+                        messages=messages,
+                        timeout=self.requestTimeout,
+                        max_tokens=maxMessageQueueToken
+                    )
+                else:
+                    resp: ChatCompletion = self.client.chat.completions.create(
+                        model=self.model,
+                        messages=messages,
+                        timeout=self.requestTimeout
+                    )
+                
                 answer = resp.choices[0].message.content
                 if answer is not None and len(answer) > 0:
                     self.messageQueue[-1].a = answer
+                    self.lastMessage = datetime.now()
                     return answer
             except (APITimeoutError, APIConnectionError) as e:
                 log.warn("request wass likely timed out, %s", str(e))
@@ -130,15 +212,18 @@ class OpenAITalk(Conversation):
         log.error("request failed, retry run out")
         return "I apologize, but the OpenAI API is currently experiencing high traffic. Kindly try again at a later time."
 
+    def prepareImages(self, images: List[str]=None) -> str:
+        for img in images:
+            self.prepareNewImageMessage(img)
 
-class TalkFactory(ConversationFactory):
+class TalkFactory(TalkFactory):
 
     def __init__(self, config: Config) -> None:
         self.config: Config = config
-        self.talks: Dict[ChatID, Conversation] = {}
+        self.talks: Dict[ChatID, Talk] = {}
 
     
-    def getTalk(self, cid: ChatID) -> Conversation:
+    def getTalk(self, cid: ChatID) -> Talk:
         if cid in self.talks:
             return self.talks[cid]
         

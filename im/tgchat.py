@@ -21,7 +21,7 @@ class TgBot(MessageBot):
         self.msgQueue: Queue[types.Message] = Queue()
 
         self.api: TeleBot = TeleBot(self.token)
-        @self.api.message_handler(content_types=['audio', 'voice', 'text', 'photo', 'picture'])
+        @self.api.message_handler(content_types=['audio', 'photo', 'voice', 'text']) #, 'video', 'document', 'location', 'contact', 'sticker', 'picture'])
         def enQueue(message: types.Message) -> None:
             self.msgQueue.put(message)
 
@@ -80,7 +80,7 @@ class TgBot(MessageBot):
             fp, cleanFunc = self.downloadFile(fd)
             msg.withAudio(fp, cleanFunc)
         if tgMsg.photo is not None:
-            # get the lagest latest image
+            # get the largest latest image
             fd: str = tgMsg.photo[-1].file_id
             fp, cleanFunc = self.downloadFile(fd)
             msg.withPhoto(fp, cleanFunc)
@@ -110,8 +110,10 @@ class TgMessage(Message):
         self.text: str = None
         self.audioFile: str = None
         self.cleanAudio: CleanFunc = None
-        self.photoFile: str = None
-        self.cleanPhoto: CleanFunc = None
+        #self.photoFile: str = None
+        #self.cleanPhoto: CleanFunc = None
+        self.photo: List[Tuple[str, CleanFunc]] = []
+
     
     def withText(self, text: str) -> TgMessage:
         self.text = text
@@ -123,8 +125,9 @@ class TgMessage(Message):
         return self
 
     def withPhoto(self, filePath: str, cleanFunc: CleanFunc) -> TgMessage:
-        self.photoFile = filePath
-        self.cleanPhoto = cleanFunc
+        #self.photoFile = filePath
+        #self.cleanPhoto = cleanFunc
+        self.photo.append((filePath, cleanFunc))
         return self
 
     def getID(self) -> MessageID:
@@ -141,6 +144,9 @@ class TgMessage(Message):
         
     def getVoice(self) -> Tuple[str, CleanFunc]:
         return self.audioFile, self.cleanAudio
+
+    def getImages(self) -> List[Tuple[str, CleanFunc]]:
+        return self.photo
  
 
 class TgChat(Chat):
