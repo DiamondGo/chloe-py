@@ -31,14 +31,13 @@ docker-compose up --no-start && docker-compose start
 Have fun!
 
 Ask question in text:  
-![ask question in text](https://github.com/DiamondGo/blob/blob/chloe/ask_coding.jpg?raw=true)
+![ask question in text](https://github.com/DiamondGo/blob/blob/chloe/ask_code.jpg?raw=true)
 
-
-Ask question in voice(if you want a reply in voice you need to setup pyservice localy):  
+Ask question in voice:
 ![ask question in text](https://github.com/DiamondGo/blob/blob/chloe/tts.jpg?raw=true)
 
 Draw picture(Dall-e 2):  
 ![ask question in text](https://github.com/DiamondGo/blob/blob/chloe/draw_pic.jpg?raw=true)
 
-Ask question about picture(Vision)
+Ask question about a picture(Vision)
 ![ask question in text](https://github.com/DiamondGo/blob/blob/chloe/drug_question.png?raw=true)
