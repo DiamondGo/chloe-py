@@ -4,7 +4,7 @@ This is the Python implement of [Chloe](https://github.com/DiamondGo/chloe) Chat
 
 You can talk to her 1 on 1 or in group chat. In group chat you need to name her at the beginning of your question or @ her bot username.
 
-Please change conf/config.yml and put your own keys there.
+Please change __[./conf/config.yml](https://github.com/DiamondGo/chloe-py/blob/main/conf/config.yml)__ and put your own keys there.
 
 You need to get 2 things done to make this work:
 * An OpenAI apikey: get one free at https://platform.openai.com/account .
