@@ -56,6 +56,16 @@ class Chat(ABC):
     def getSelf(self) -> User:
         raise NotImplementedError("not implemented")
     
+class Media(ABC):
+
+    def getText(self) -> List[str]:
+        return None
+    
+    def getPhoto(self) -> List[Tuple[str, CleanFunc]]:
+        return None
+
+    def getVoice(self) -> List[Tuple[str, CleanFunc]]:
+        return None
 
 class Message(ABC):
     
@@ -72,16 +82,9 @@ class Message(ABC):
         raise NotImplementedError("not implemented")
     
     @abstractmethod
-    def getText(self) -> str:
+    def getMedia(sefl) -> Media:
         raise NotImplementedError("not implemented")
-        
-    @abstractmethod
-    def getVoice(self) -> Tuple[str, CleanFunc]:
-        raise NotImplementedError("not implemented")
-    
-    @abstractmethod
-    def getImages(self) -> List[Tuple[str, CleanFunc]]:
-        raise NotImplementedError("not implemented")
+
         
         
 
@@ -150,3 +153,5 @@ class BotService(ABC):
     @abstractmethod
     def run(self) -> None:
         raise NotImplementedError("not implemented")
+
+
