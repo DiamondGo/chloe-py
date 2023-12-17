@@ -5,9 +5,9 @@ from typing import Tuple
 from openai import OpenAI
 
 from definition import CleanFunc
-from common import getLogger, rmHandle
+from common import rmHandle
 
-log = getLogger(__file__)
+from loguru import logger
 
 def getOpenAIClient(apiKey: str) -> OpenAI:
     return OpenAI(api_key=apiKey)
@@ -36,7 +36,7 @@ def convertToMp3(audioFile: str) -> Tuple[str, CleanFunc]:
         result = subprocess.run(command, stdout=devnull, stderr=devnull)
 
     if result.returncode != 0 or not os.path.exists(mp3file):
-        log.error("failed to convert %s to mp3, error code %d", audioFile, result.returncode)
+        logger.error("failed to convert {} to mp3, error code {}", audioFile, result.returncode)
         return None, None
     
     return mp3file, rmHandle(mp3file)

@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 import os
 import yaml
-import logging
-from logging.handlers import TimedRotatingFileHandler
+import datetime
+from loguru import logger 
 from typing import Callable
+
 
 @dataclass
 class OpenAIConfig:
@@ -82,21 +83,10 @@ def getAcl() -> ACL:
         return acl
 
 
-def getLogger(name) -> logging.Logger:
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
 
-    handler = TimedRotatingFileHandler(os.path.join(getRoot(), "log", "chloe.log"),
-                                       when="midnight",
-                                       interval=1,
-                                       backupCount=30)
-    handler.suffix = "%Y-%m-%d"
-
-    formatter = logging.Formatter('%(asctime)s - %(message)s')
-    handler.setFormatter(formatter)
-
-    logger.addHandler(handler)
-
+def setLogger():
+    date = datetime.datetime.now().strftime("%Y_%m_%d")
+    logger.add(f"log/chloe.{date}.log", rotation="00:00", level="DEBUG", retention=30)
     return logger
     
 class Defer:

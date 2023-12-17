@@ -5,7 +5,7 @@ from datetime import time, datetime, timedelta
 from typing import List, Dict
 
 from definition import ConversationID, Conversation, TalkFactory, ChatID, ImageRecognizer, Talk
-from common import Config, OpenAIConfig, getLogger
+from common import Config, OpenAIConfig
 from ai.common import getOpenAIClient
 
 
@@ -18,7 +18,7 @@ maxMessageQueueToken = 4096
 #maxMessageQueueToken = 1000
 CompletionTimeout    = timedelta(seconds=1)
 
-log = getLogger(__file__)
+from loguru import logger
 
 @dataclass
 class QA:
@@ -203,13 +203,13 @@ class OpenAITalk(Talk):
                     self.lastMessage = datetime.now()
                     return answer
             except (APITimeoutError, APIConnectionError) as e:
-                log.warn("request wass likely timed out, %s", str(e))
+                logger.warn("request wass likely timed out, {}", str(e))
                 retry -= 1
             except Exception as e:
-                log.warn("request failed, %s", str(e))
+                logger.warn("request failed, {}", str(e))
                 retry -= 1
                 
-        log.error("request failed, retry run out")
+        logger.error("request failed, retry run out")
         return "I apologize, but the OpenAI API is currently experiencing high traffic. Kindly try again at a later time."
 
     def prepareImages(self, images: List[str]=None) -> str:
