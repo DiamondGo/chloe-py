@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from definition import MessageBot, Message, Media, MessageID, User, UserID, Chat, ChatID, CleanFunc
 from im.common import ChatCache
-from common import rmHandle, getLogger
+from common import rmHandle
 
 import os, tempfile, re
 from queue import Queue
@@ -10,7 +10,7 @@ from threading import Thread
 from telebot import TeleBot, types
 from typing import Iterable, Tuple, List
 
-log = getLogger(__file__)
+from loguru import logger
 
 _idPrefix = 'tg-'
 
@@ -206,7 +206,7 @@ class TgChat(Chat):
     def replyMessage(self, message: str, replyTo: MessageID) -> None:
         escapedMsg = self.escape(message)
         if escapedMsg != message:
-            log.debug("escaped message: %s", escapedMsg)
+            logger.debug("escaped message: {}", escapedMsg)
             
         try:
             self.bot.api.send_message(
@@ -216,7 +216,7 @@ class TgChat(Chat):
                 reply_to_message_id=self.bot.stripPrefixToInt(replyTo)
             )
         except Exception as e:
-            log.error("failed to send message as markdown, %s", str(e))
+            logger.error("failed to send message as markdown, {}", str(e))
             self.bot.api.send_message(
                 chat_id=self.bot.stripPrefixToInt(self.id),
                 text=message,
@@ -240,7 +240,7 @@ class TgChat(Chat):
                 reply_to_message_id=self.bot.stripPrefixToInt(replyTo)
             )
         except Exception as e:
-            log.error("failed to send quote message as markdown, %s", str(e))
+            logger.error("failed to send quote message as markdown, {}", str(e))
 
             plain = quote
             plain += "  \n"

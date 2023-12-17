@@ -1,5 +1,5 @@
 from definition import BotService, MessageBot, Message, SpeechToText, TextToSpeech, UserID
-from common import Config, ACL, Defer, getLogger
+from common import Config, ACL, Defer
 from im.tgchat import TgBot
 from ai.openaitalk import TalkFactory
 from ai.common import convertToMp3
@@ -10,7 +10,8 @@ from threading import Thread, Semaphore, Lock
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Dict, Iterable, Tuple
 
-log = getLogger(__file__)
+from loguru import logger
+
 
 puncs = [",", ".", "，", "。", "!", "?", "！", "？"]
 
@@ -73,10 +74,10 @@ class SmartBot(BotService):
     def handleMessage(self, m: Message) -> None:
         with Defer() as defer:
             if m is None or m.getUser() is None or m.getUser().getID() is None or m.getChat() is None:
-                log.warn("received empty message, skip it")
+                logger.warn("received empty message, skip it")
                 if m is not None:
-                    log.debug("message user is %s", m.getUser().getID())
-                    log.debug("message chat is %s", m.getChat().getID())
+                    logger.debug("message user is {}", m.getUser().getID())
+                    logger.debug("message chat is {}", m.getChat().getID())
                 return
         
             user = m.getUser()
@@ -131,7 +132,7 @@ class SmartBot(BotService):
             if not allowed and memberCnt <= 2:
                 chat.replyMessage("Sorry, this AI assistant is not allowed in this conversation."+
                                 " Please contact the administrator for access.", mid)
-                log.info("access denied for user '%s' in chat '%s', message text: %s", uid, cid, msgText)
+                logger.info("access denied for user '{}' in chat '{}', message text: {}", uid, cid, msgText)
                 return
 
             if voice is not None:
@@ -158,24 +159,24 @@ class SmartBot(BotService):
             if not allowed:
                 chat.replyMessage("Sorry, this AI assistant is not allowed in this conversation."+
                                 " Please contact the administrator for access.", mid)
-                log.info("access denied for user '%s' in chat '%s', message text: %s", uid, cid, text)
+                logger.info("access denied for user '{}' in chat '{}', message text: {}", uid, cid, text)
                 return
 
-            log.info("received question from %s, id %s: %s", user.getUserName(), uid, text)
+            logger.info("received question from {}, id {}: {}", user.getUserName(), uid, text)
             
             talk = self.talkFactory.getTalk(cid)
 
             # handle vision request
             if len(photos) > 0:
-                log.debug("prepare %d images", len(photos))
+                logger.debug("prepare {} images", len(photos))
                 talk.prepareImages(photos)
             
             if text is None or len(text) == 0:
-                log.debug("no text, skip ask")
+                logger.debug("no text, skip ask")
                 return
 
             answer = talk.ask(text)
-            log.debug("received answer for chat %s: %s", cid, answer)
+            logger.debug("received answer for chat {}: {}", cid, answer)
 
             try:
                 if voice is not None:
@@ -184,14 +185,14 @@ class SmartBot(BotService):
                     defer(cleanAac)
                     if vf is not None and cleanAac is not None:
                         chat.replyVoice(vf, mid)
-                        log.info("voice replied to %s", user.getUserName())
+                        logger.info("voice replied to {}", user.getUserName())
                     else:
-                        log.error("failed converting to speech: %s", text)
+                        logger.error("failed converting to speech: {}", text)
                 else:
                     chat.replyMessage(answer, mid)
-                    log.info("replied to %s", user.getUserName())
+                    logger.info("replied to {}", user.getUserName())
             except Exception as e:
-                log.error("exception when replying message to %s, error: %s", user.getUserName(), str(e))
+                logger.error("exception when replying message to {}, error: {}", user.getUserName(), str(e))
                 
 
     def run(self) -> None:

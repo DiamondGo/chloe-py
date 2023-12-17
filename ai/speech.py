@@ -1,11 +1,11 @@
 from definition import SpeechToText, TextToSpeech, CleanFunc
-from common import rmHandle, getLogger
+from common import rmHandle
 from ai.common import getOpenAIClient
 
 from typing import Tuple
 import os, uuid, tempfile
 
-log = getLogger(__file__)
+from loguru import logger
 
 class Wisper(SpeechToText):
     def __init__(self, apiKey: str) -> None:
@@ -25,7 +25,7 @@ class Wisper(SpeechToText):
                     break
             except Exception as e:
                 retry -= 1
-                log.warn("speech2text request failed, %s", str(e))
+                logger.warn("speech2text request failed, {}", str(e))
 
         return transcript.text
         
@@ -47,7 +47,7 @@ class ReadText(TextToSpeech):
                 )
                 break
             except Exception as e:
-                log.warn("text2speech request failed, %s", str(e))
+                logger.warn("text2speech request failed, {}", str(e))
                 retry -= 1
         
         filename = str(uuid.uuid4()) + ".aac"

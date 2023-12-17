@@ -1,5 +1,7 @@
-from common import getConfig, getAcl
+from common import getConfig, getAcl, setLogger
 from service.botservice import SmartBot
+
+setLogger()
 
 if __name__ == '__main__':
     cfg = getConfig()
