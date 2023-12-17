@@ -145,9 +145,6 @@ class TgMessage(Message):
         self.text: str = None
         self.audioFile: str = None
         self.cleanAudio: CleanFunc = None
-        #self.photoFile: str = None
-        #self.cleanPhoto: CleanFunc = None
-        self.photo: List[Tuple[str, CleanFunc]] = []
         self.media: TgMedia = TgMedia()
 
     
