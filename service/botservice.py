@@ -99,16 +99,25 @@ class SmartBot(BotService):
 
             chat = m.getChat()
             cid = chat.getID()
-
-            voice, cleanFunc = m.getVoice()
-            defer(cleanFunc)
+            
+            voice = None
+            if m.getMedia().getVoice() is not None:
+                for voice, cleanFunc in m.getMedia().getVoice():
+                    defer(cleanFunc)
+                    break # only one voice for now
             
             photos = []
-            for photo, cleanImageFunc in m.getImages():
-                photos.append(photo) # for telegram there will be only one image one message, but we use list anyway
-                defer(cleanImageFunc)
+            if m.getMedia().getPhoto() is not None:
+                for photo, cleanImageFunc in m.getMedia().getPhoto():
+                    photos.append(photo) # for telegram there will be only one image one message, but we use list anyway
+                    defer(cleanImageFunc)
 
-            msgText = m.getText()
+            #msgText = None if m.getMedia().getText() is None else m.getMedia().getText()[0]
+            texts = m.getMedia().getText()
+            if texts is None or len(texts) == 0:
+                msgText = None
+            else:
+                msgText = m.getMedia().getText()[0]
             mid = m.getID()
 
             allowed = self.acl.allowUser(uid)
