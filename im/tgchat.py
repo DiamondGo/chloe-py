@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from definition import MessageBot, Message, MessageID, User, UserID, Chat, ChatID, CleanFunc
+from definition import MessageBot, Message, Media, MessageID, User, UserID, Chat, ChatID, CleanFunc
 from im.common import ChatCache
 from common import rmHandle, getLogger
 
@@ -100,6 +100,41 @@ class TgBot(MessageBot):
             return tmpf.name, rmHandle(tmpf.name)
         
 
+class TgMedia(Media):
+    def __init__(self):
+        self.text = None
+        self.voice = None
+        self.photo = None
+
+    def addText(self, text: str):
+        if text is not None:
+            if self.text is None:
+                self.text = []
+            self.text.append(text)
+    
+    def addVoice(self, audioFile: str, cleanFunc: CleanFunc):
+        if audioFile is not None and cleanFunc is not None:
+            if self.voice is None:
+                self.voice = []
+            self.voice.append((audioFile, cleanFunc))
+
+    def addPhoto(self, photoFile: str, cleanFunc: CleanFunc):
+        if photoFile is not None and cleanFunc is not None:
+            if self.photo is None:
+                self.photo = []
+            self.photo.append((photoFile, cleanFunc))
+
+    def getPhoto(self) -> List[Tuple[str, CleanFunc]]:
+        return self.photo
+
+    def getVoice(self) -> List[Tuple[str, CleanFunc]]:
+        return self.voice
+    
+    def getText(self) -> List[str]:
+        return self.text
+
+
+
 class TgMessage(Message):
     
     def __init__(self, bot: TgBot, mid: MessageID, uid: UserID, cid: ChatID) -> None:
@@ -110,24 +145,19 @@ class TgMessage(Message):
         self.text: str = None
         self.audioFile: str = None
         self.cleanAudio: CleanFunc = None
-        #self.photoFile: str = None
-        #self.cleanPhoto: CleanFunc = None
-        self.photo: List[Tuple[str, CleanFunc]] = []
+        self.media: TgMedia = TgMedia()
 
     
     def withText(self, text: str) -> TgMessage:
-        self.text = text
+        self.media.addText(text)
         return self
 
     def withAudio(self, filePath: str, cleanFunc: CleanFunc) -> TgMessage:
-        self.audioFile = filePath
-        self.cleanAudio = cleanFunc
+        self.media.addVoice(filePath, cleanFunc)
         return self
 
     def withPhoto(self, filePath: str, cleanFunc: CleanFunc) -> TgMessage:
-        #self.photoFile = filePath
-        #self.cleanPhoto = cleanFunc
-        self.photo.append((filePath, cleanFunc))
+        self.media.addPhoto(filePath, cleanFunc)
         return self
 
     def getID(self) -> MessageID:
@@ -139,14 +169,9 @@ class TgMessage(Message):
     def getChat(self) -> Chat:
         return self.bot.lookupChat(self.cid)
     
-    def getText(self) -> str:
-        return self.text
-        
-    def getVoice(self) -> Tuple[str, CleanFunc]:
-        return self.audioFile, self.cleanAudio
-
-    def getImages(self) -> List[Tuple[str, CleanFunc]]:
-        return self.photo
+    def getMedia(self) -> Media:
+        return self.media
+    
  
 
 class TgChat(Chat):
