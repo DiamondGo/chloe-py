@@ -1,14 +1,16 @@
-FROM python:3.11-alpine
+FROM debian:stable-slim
 
 ARG CHLOE_DIR=/chloe
 
-WORKDIR ${CHLOE_DIR}
-
-RUN apk update
-RUN apk add --no-cache git ffmpeg wget
+RUN apt-get update
+RUN apt-get install -y python3 python3-virtualenv python3-pip ffmpeg curl git
 
 RUN git clone https://github.com/DiamondGo/chloe-py.git ${CHLOE_DIR}
 
-RUN pip install -r requirements.txt --break-system-packages
+WORKDIR ${CHLOE_DIR}
 
-ENTRYPOINT [ "python", "/chloe/main.py" ]
+RUN cd ${CHLOE_DIR} && virtualenv --copies venv
+
+RUN cd ${CHLOE_DIR} && . ./venv/bin/activate && pip install -r requirements.txt
+
+ENTRYPOINT [ "/bin/bash", "-c", "source ./venv/bin/activate && python main.py" ]
