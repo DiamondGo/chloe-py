@@ -177,18 +177,21 @@ class SmartBot(BotService):
             answer = talk.ask(text)
             log.debug("received answer for chat %s: %s", cid, answer)
 
-            if voice is not None:
-                chat.quoteMessage(answer, mid, "Transcription:\n" + text)
-                vf, cleanAac = self.t2s.convert(answer)
-                defer(cleanAac)
-                if vf is not None and cleanAac is not None:
-                    chat.replyVoice(vf, mid)
-                    log.info("voice replied to %s", user.getUserName())
+            try:
+                if voice is not None:
+                    chat.quoteMessage(answer, mid, "Transcription:\n" + text)
+                    vf, cleanAac = self.t2s.convert(answer)
+                    defer(cleanAac)
+                    if vf is not None and cleanAac is not None:
+                        chat.replyVoice(vf, mid)
+                        log.info("voice replied to %s", user.getUserName())
+                    else:
+                        log.error("failed converting to speech: %s", text)
                 else:
-                    log.error("failed converting to speech: %s", text)
-            else:
-                chat.replyMessage(answer, mid)
-                log.info("replied to %s", user.getUserName())
+                    chat.replyMessage(answer, mid)
+                    log.info("replied to %s", user.getUserName())
+            except Exception as e:
+                log.error("exception when replying message to %s, error: %s", user.getUserName(), str(e))
                 
 
     def run(self) -> None:
