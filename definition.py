@@ -102,7 +102,7 @@ ConversationID = int # int64 actually
 class ImageRecognizer(ABC):
     
     @abstractmethod
-    def prepareImages(images: List[str]=None) -> str:
+    def prepareImages(self, images: List[str]=None) -> None:
         raise NotImplementedError("not implemented")
 
 
@@ -117,7 +117,7 @@ class Talk(Conversation, ImageRecognizer):
     pass
 
 
-class TalkFactory(ABC):
+class AITalkFactory(ABC):
 
     @abstractmethod
     def getTalk(self, cid: ChatID) -> Talk:

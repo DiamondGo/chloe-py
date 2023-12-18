@@ -1,7 +1,7 @@
 from definition import BotService, MessageBot, Message, SpeechToText, TextToSpeech, UserID
 from common import Config, ACL, Defer
 from im.tgchat import TgBot
-from ai.openaitalk import TalkFactory
+from ai.talkfact import AITalkFactory
 from ai.common import convertToMp3
 from ai.speech import Wisper, ReadText
 
@@ -19,7 +19,7 @@ class SmartBot(BotService):
 
     def __init__(self, config: Config, acl: ACL) -> None:
         tgBot = TgBot(config.telegram.botToken)
-        talkFact = TalkFactory(config)
+        talkFact = AITalkFactory(config)
 
         self.botName = config.botName
         self.bots: List[MessageBot] = [tgBot]
