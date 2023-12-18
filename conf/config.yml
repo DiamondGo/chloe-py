@@ -8,5 +8,9 @@ openAI:
 telegram:
   botToken: 1234567890:ABCxxXXXXXXXXXXXXXXXX0XXXXXXXXXXXXX
 
+gemini:
+  apiKey: xxxxxxxxxxxxxxxxxxxxxxxxxxx_yyy_zzzzzzz
+
 system:
   whitelistEnabled: true
+  useGemini: true
