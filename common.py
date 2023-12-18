@@ -16,17 +16,26 @@ class OpenAIConfig:
     visionContextTimeout: int = 60
 
 @dataclass
+class GeminiConfig:
+    apiKey: str
+    model: str = "gemini-pro"
+    contextTimeout: int = 600
+    visionModel: str = "gemini-pro-vision"
+
+@dataclass
 class TelegramConfig:
     botToken: str
 
 @dataclass
 class SystemConfig:
     whitelistEnabled: bool
+    useGemini: bool = True
 
 @dataclass
 class Config:
     botName: str
     openAI: OpenAIConfig
+    gemini: GeminiConfig
     telegram: TelegramConfig
     system: SystemConfig
 
@@ -71,6 +80,7 @@ def getConfig() -> Config:
     with open(os.path.join(getRoot(), 'conf', 'config.yml')) as cfg:
         data = yaml.load(cfg, yaml.FullLoader)
         data['openAI'] = OpenAIConfig(**data['openAI'])
+        data['gemini'] = GeminiConfig(**data['gemini'])
         data['telegram'] = TelegramConfig(**data['telegram'])
         data['system'] = SystemConfig(**data['system'])
         config = Config(**data)
