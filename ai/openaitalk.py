@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import time, datetime, timedelta
 from typing import List, Dict
 
-from definition import ConversationID, Conversation, TalkFactory, ChatID, ImageRecognizer, Talk
+from definition import Talk
 from common import Config, OpenAIConfig
 from ai.common import getOpenAIClient
 
@@ -212,23 +212,7 @@ class OpenAITalk(Talk):
         logger.error("request failed, retry run out")
         return "I apologize, but the OpenAI API is currently experiencing high traffic. Kindly try again at a later time."
 
-    def prepareImages(self, images: List[str]=None) -> str:
+    def prepareImages(self, images: List[str]=None) -> None:
         for img in images:
             self.prepareNewImageMessage(img)
-
-class TalkFactory(TalkFactory):
-
-    def __init__(self, config: Config) -> None:
-        self.config: Config = config
-        self.talks: Dict[ChatID, Talk] = {}
-
-    
-    def getTalk(self, cid: ChatID) -> Talk:
-        if cid in self.talks:
-            return self.talks[cid]
-        
-        talk = OpenAITalk(self.config.botName, self.config.openAI)
-        self.talks[cid] = talk
-        
-        return talk
 
