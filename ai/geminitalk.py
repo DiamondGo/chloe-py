@@ -7,6 +7,7 @@ import PIL.Image
 from common import GeminiConfig
 from definition import Talk
 
+from loguru import logger
 
 configuredKey = None
 def configureGemini(apiKey: str):
@@ -44,7 +45,7 @@ class GeminiTalk(Talk):
         now = datetime.now()
         if now > self.lastMessage + self.ctxTimeout:
             self.pendingContent = []
-            self.pendingContent.append(greeting)
+            self.pendingContent.extend(greeting)
             self.hasImage = False
         
         if len(self.pendingContent) > 2 and self.pendingContent[-1]['role'] == 'user':
@@ -56,18 +57,26 @@ class GeminiTalk(Talk):
                     'parts': [q]
                 }
             )
+            
+        try:
+            if self.hasImage:
+                resp = self.visionModel.generate_content(self.pendingContent[-1]) # gemini-pro-vision is not enabled for multi-turn conversation
+                resp.resolve()
 
-        if self.hasImage:
-            resp = self.visionModel.generate_content(self.pendingContent[-1]) # gemini-pro-vision is not enabled for multi-turn conversation
-            resp.resolve()
-        else:
-            resp = self.model.generate_content(self.pendingContent)
-            resp.resolve()
+                self.pendingContent = []
+                self.pendingContent.extend(greeting)
+                self.hasImage = False
 
-        self.pendingContent.append({
-            'role': 'model',
-            'parts': [resp.text]
-        })
+            else:
+                resp = self.model.generate_content(self.pendingContent)
+                resp.resolve()
+
+                self.pendingContent.append({
+                    'role': 'model',
+                    'parts': [resp.text]
+                })
+        except Exception as e:
+            logger.exception(str(e))
             
         self.lastMessage = datetime.now()
         return resp.text
@@ -76,7 +85,7 @@ class GeminiTalk(Talk):
         now = datetime.now()
         if now > self.lastMessage + self.ctxTimeout:
             self.pendingContent = []
-            self.pendingContent.append(greeting)
+            self.pendingContent.extend(greeting)
             self.hasImage = False
         
         parts = []
