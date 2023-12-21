@@ -5,12 +5,14 @@ openAI:
   model: gpt-3.5-turbo
   contextTimeout: 300
 
-telegram:
-  botToken: 1234567890:ABCxxXXXXXXXXXXXXXXXX0XXXXXXXXXXXXX
-
 gemini:
   apiKey: xxxxxxxxxxxxxxxxxxxxxxxxxxx_yyy_zzzzzzz
 
+telegram:
+  botToken: 1234567890:ABCxxXXXXXXXXXXXXXXXX0XXXXXXXXXXXXX
+  escapeText: false
+  parseMode: Markdown
+
 system:
   whitelistEnabled: true
-  useGemini: true
+  useGemini: false

@@ -3,7 +3,6 @@ import unittest
 import telebot
 
 from common import getConfig, getAcl
-from im.tgchat import TgBot
     
 
 class TestBot(unittest.TestCase):
