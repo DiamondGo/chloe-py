@@ -17,17 +17,6 @@ def configureGemini(apiKey: str):
         genai.configure(api_key=configuredKey)
         
 
-greeting = [
-    {
-        'role': 'user',
-        'parts': ['I will call you as Chloe.']
-    },
-    {
-        'role': 'model',
-        'parts': ['You can call me Chloe.']
-    },
-]
-
 class GeminiTalk(Talk):
 
     def __init__(self, botName: str, config: GeminiConfig) -> None:
@@ -38,14 +27,24 @@ class GeminiTalk(Talk):
         self.ctxTimeout = timedelta(seconds=config.contextTimeout)
         self.visionModel = genai.GenerativeModel(config.visionModel)
         self.pendingContent = []
-        self.pendingContent.extend(greeting)
         self.hasImage = False
+        self.greeting = [
+            {
+                'role': 'user',
+                'parts': [f'I will call you as {botName}.']
+            },
+            {
+                'role': 'model',
+                'parts': [f'You can call me {botName}.']
+            },
+        ]
+        self.pendingContent.extend(self.greeting)
 
     def ask(self, q: str) -> str:
         now = datetime.now()
         if now > self.lastMessage + self.ctxTimeout:
             self.pendingContent = []
-            self.pendingContent.extend(greeting)
+            self.pendingContent.extend(self.greeting)
             self.hasImage = False
         
         if len(self.pendingContent) > 2 and self.pendingContent[-1]['role'] == 'user':
@@ -64,7 +63,7 @@ class GeminiTalk(Talk):
                 resp.resolve()
 
                 self.pendingContent = []
-                self.pendingContent.extend(greeting)
+                self.pendingContent.extend(self.greeting)
                 self.hasImage = False
                 
                 text = resp.text
@@ -88,7 +87,7 @@ class GeminiTalk(Talk):
         now = datetime.now()
         if now > self.lastMessage + self.ctxTimeout:
             self.pendingContent = []
-            self.pendingContent.extend(greeting)
+            self.pendingContent.extend(self.greeting)
             self.hasImage = False
         
         parts = []
