@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from definition import MessageBot, Message, Media, MessageID, User, UserID, Chat, ChatID, CleanFunc
 from im.common import ChatCache
-from common import rmHandle
+from common import rmHandle, TelegramConfig
 
 import os, tempfile, re
 from queue import Queue
@@ -16,11 +16,10 @@ _idPrefix = 'tg-'
 
 class TgBot(MessageBot):
     
-    def __init__(self, token: str) -> None:
-        self.token: str = token
+    def __init__(self, config: TelegramConfig) -> None:
+        self.config = config
         self.msgQueue: Queue[types.Message] = Queue()
-
-        self.api: TeleBot = TeleBot(self.token)
+        self.api: TeleBot = TeleBot(config.botToken)
         @self.api.message_handler(content_types=['audio', 'photo', 'voice', 'text']) #, 'video', 'document', 'location', 'contact', 'sticker', 'picture'])
         def enQueue(message: types.Message) -> None:
             self.msgQueue.put(message)
@@ -179,6 +178,8 @@ class TgChat(Chat):
     def __init__(self, bot: TgBot, id: ChatID, memberCnt: int) -> None:
         self.id: ChatID = id
         self.bot: TgBot = bot
+        self.parseMode = bot.config.parseMode
+        self.needEscape = bot.config.escapeText
         self.memberCount: int = memberCnt
         self.notouchPattens = self.createPatterns()
         
@@ -212,7 +213,7 @@ class TgChat(Chat):
             self.bot.api.send_message(
                 chat_id=self.bot.stripPrefixToInt(self.id),
                 text=escapedMsg,
-                parse_mode="MarkdownV2",
+                parse_mode=self.parseMode,
                 reply_to_message_id=self.bot.stripPrefixToInt(replyTo)
             )
         except Exception as e:
@@ -228,7 +229,12 @@ class TgChat(Chat):
 
     def quoteMessage(self, message: str, replyTo: MessageID, quote: str) -> None:
         try:
-            md = "_*" + self.escape(quote) + "*_"
+            md = ""
+            if self.parseMode.startswith("Markdown"):
+                #md = "\n".join([f"**{self.escape(l)}**" for l in quote.splitlines()])
+                md = f"```{self.escape(quote)}```"
+            else:
+                md = quote
             md += "  \n"
             md += "  \n"
             md += self.escape(message)
@@ -236,7 +242,7 @@ class TgChat(Chat):
             self.bot.api.send_message(
                 chat_id=self.bot.stripPrefixToInt(self.id),
                 text=md,
-                parse_mode="MarkdownV2",
+                parse_mode=self.parseMode,
                 reply_to_message_id=self.bot.stripPrefixToInt(replyTo)
             )
         except Exception as e:
@@ -277,6 +283,8 @@ class TgChat(Chat):
         return msg.replace('\\', '\\\\')
     
     def escape(self, msg: str) -> str:
+        if not self.needEscape:
+            return msg
         matchPos = []
         for p in self.notouchPattens:
             for m in re.finditer(p, msg):
