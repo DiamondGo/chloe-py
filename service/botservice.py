@@ -18,7 +18,7 @@ puncs = [",", ".", "，", "。", "!", "?", "！", "？"]
 class SmartBot(BotService):
 
     def __init__(self, config: Config, acl: ACL) -> None:
-        tgBot = TgBot(config.telegram.botToken)
+        tgBot = TgBot(config.telegram)
         talkFact = AITalkFactory(config)
 
         self.botName = config.botName
