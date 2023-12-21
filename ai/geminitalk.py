@@ -66,7 +66,8 @@ class GeminiTalk(Talk):
                 self.pendingContent = []
                 self.pendingContent.extend(greeting)
                 self.hasImage = False
-
+                
+                text = resp.text
             else:
                 resp = self.model.generate_content(self.pendingContent)
                 resp.resolve()
@@ -75,11 +76,13 @@ class GeminiTalk(Talk):
                     'role': 'model',
                     'parts': [resp.text]
                 })
+
+                text = resp.text
         except Exception as e:
             logger.exception(str(e))
             
         self.lastMessage = datetime.now()
-        return resp.text
+        return text
 
     def prepareImages(self, images: List[str]=None) -> None:
         now = datetime.now()

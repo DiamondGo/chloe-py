@@ -25,6 +25,8 @@ class GeminiConfig:
 @dataclass
 class TelegramConfig:
     botToken: str
+    escapeText: bool = False
+    parseMode: str = ""
 
 @dataclass
 class SystemConfig:
