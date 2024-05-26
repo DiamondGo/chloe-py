@@ -22,7 +22,30 @@ class GeminiTalk(Talk):
     def __init__(self, botName: str, config: GeminiConfig) -> None:
         self.apiKey: str = config.apiKey
         configureGemini(self.apiKey)
-        self.model = genai.GenerativeModel(config.model)
+        
+        safety_settings = [
+            {
+                "category": "HARM_CATEGORY_HARASSMENT",
+                "threshold": "BLOCK_NONE"
+            },
+            {
+                "category": "HARM_CATEGORY_HATE_SPEECH",
+                "threshold": "BLOCK_NONE"
+            },
+            {
+                "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                "threshold": "BLOCK_NONE"
+            },
+            {
+                "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                "threshold": "BLOCK_NONE"
+            }
+        ]
+
+        self.model = genai.GenerativeModel(
+            model_name=config.model,
+            safety_settings=safety_settings
+        )
         self.lastMessage = datetime.now()
         self.ctxTimeout = timedelta(seconds=config.contextTimeout)
         self.visionModel = genai.GenerativeModel(config.visionModel)
@@ -57,28 +80,33 @@ class GeminiTalk(Talk):
                 }
             )
             
-        try:
-            if self.hasImage:
-                resp = self.visionModel.generate_content(self.pendingContent[-1]) # gemini-pro-vision is not enabled for multi-turn conversation
-                resp.resolve()
+        retry = 3
+        while retry > 0:
+            try:
+                if self.hasImage:
+                    resp = self.visionModel.generate_content(self.pendingContent[-1]) # gemini-pro-vision is not enabled for multi-turn conversation
+                    resp.resolve()
 
-                self.pendingContent = []
-                self.pendingContent.extend(self.greeting)
-                self.hasImage = False
+                    self.pendingContent = []
+                    self.pendingContent.extend(self.greeting)
+                    self.hasImage = False
+                    
+                    text = resp.text
+                else:
+                    resp = self.model.generate_content(self.pendingContent)
+                    resp.resolve()
+
+                    self.pendingContent.append({
+                        'role': 'model',
+                        'parts': [resp.text]
+                    })
+
+                    text = resp.text
                 
-                text = resp.text
-            else:
-                resp = self.model.generate_content(self.pendingContent)
-                resp.resolve()
-
-                self.pendingContent.append({
-                    'role': 'model',
-                    'parts': [resp.text]
-                })
-
-                text = resp.text
-        except Exception as e:
-            logger.exception(str(e))
+                break
+            except Exception as e:
+                logger.exception(str(e))
+                retry -= 1
             
         self.lastMessage = datetime.now()
         return text
