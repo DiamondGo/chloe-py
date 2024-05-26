@@ -24,7 +24,10 @@ class AITalkFactory(AITalkFactory):
             talk = GeminiTalk(self.config.botName, self.config.gemini)
         else:
             logger.debug("create openai talk for chat {}", cid)
-            talk = OpenAITalk(self.config.botName, self.config.openAI)
+            try:
+                talk = OpenAITalk(self.config.botName, self.config.openAI)
+            except Exception as e:
+                logger.error("fail to create openai talk, %s", str(e))
         self.talks[cid] = talk
         
         return talk
