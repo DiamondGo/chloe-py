@@ -2,6 +2,6 @@ pyTelegramBotAPI==4.23.0
 PyYAML==6.0.2
 tiktoken==0.7.0
 openai==1.52.2
-loguru==0.8.2
+loguru==0.7.2
 google-generativeai==0.8.3
 pillow==11.0.0
